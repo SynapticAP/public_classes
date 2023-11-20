@@ -36,7 +36,7 @@ global with sharing class SDocsTable {
 			ans.disco__Answer__c = ans.disco__Answer__c.replaceAll('<', '&lt;');
 			ans.disco__Answer__c = ans.disco__Answer__c.replaceAll('>', '&gt;');
 		} 
-		else if (ans.disco__Question__r.disco__Type__c == 'Date')
+		else if (ans.disco__Question__r.disco__Type__c == 'Date' && ans.disco__Date_Answer__c != null)
 		{
 			DateTime dt = DateTime.newInstance(ans.disco__Date_Answer__c,Time.newInstance(0,0,0,0));
 			if (ans.disco__Question__r.disco__DMY_Format__c==true)
@@ -44,7 +44,7 @@ global with sharing class SDocsTable {
 			else 
 				ans.disco__Answer__c = dt.format('MM/dd/yyyy');			
 		}
-		else if (ans.disco__Question__r.disco__Type__c == 'Date/Time' )	
+		else if (ans.disco__Question__r.disco__Type__c == 'Date/Time' && ans.disco__Date_Time_Answer__c != null)	
 		{
 			DateTime dt = ans.disco__Date_Time_Answer__c;
 			if (ans.disco__Question__r.disco__DMY_Format__c==true)

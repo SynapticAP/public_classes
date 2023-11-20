@@ -1,4 +1,4 @@
-global class FSL_CallableApexYourekaForm implements Callable {
+global class CallableYourekaSDocsTable implements Callable {
  public class ExtensionMalformedCallException extends Exception {}
   public Object call(String action, Map<String,Object> args) {
     switch on action {
@@ -47,11 +47,12 @@ global class FSL_CallableApexYourekaForm implements Callable {
 
 
   public List<disco__Answer__c> queryAnswers(SDocsTable.TableOptions options){
-    String query = 'SELECT disco__Answer__c, disco__Long_Text_Answer__c, disco__E_Sig_Image_Link__c, disco__E_Sig_Image_Id__c,disco__Linked_Section_Order__c, '
-              +'disco__Question__r.disco__Label__c, disco__Question__r.disco__Image_Version_ID__c, disco__Question__r.disco__Section__r.Name, disco__Linked_Section_Record_ID__c, '
+    String query = 'SELECT disco__Answer__c, disco__Long_Text_Answer__c,disco__Date_Answer__c,disco__Date_Time_Answer__c, disco__E_Sig_Image_Link__c, disco__E_Sig_Image_Id__c,disco__Linked_Section_Order__c, '
+              +'disco__Question__r.disco__DMY_Format__c,disco__Question__r.disco__Label__c, disco__Question__r.disco__Image_Version_ID__c, disco__Question__r.disco__Section__r.Name, disco__Linked_Section_Record_ID__c, '
               +'disco__Form__r.disco__Form_Template_Name__c, disco__Form__r.id, disco__Question__r.disco__Order__c, disco__Hidden_By_Dep__c, disco__Question__r.disco__Type__c,  '
 			  +'disco__Question__r.disco__Section__r.disco__Type__c '
             +'FROM disco__Answer__c ';
+		system.debug('here');
     if (options.queryWhereClause != null && options.queryWhereClause != '')
       query += options.queryWhereClause;
     else 
