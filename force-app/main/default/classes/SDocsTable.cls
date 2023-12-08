@@ -3,7 +3,10 @@ global with sharing class SDocsTable {
 
 	global class TableOptions{
 		global Boolean returnAsTable;
-		global String formId; // not needed if query is passed
+		global String formId; // not needed if query is passed, or if formfldname, objid,templatename are passed
+		global String formLookupName;// to get form, use this lookup on the form object. Ignored if form id is passed
+		global String recordId; // used to get form for a specific record. Ignored if form id is passed
+		global String templateName; //used to get a form for a specific template. Ignored if form id is passed
 		global String tableCSSName; // only applies is returnAsTable == true
 		global Boolean createTableTag;// only applies is returnAsTable == true
 //		global Boolean twoColumnForTwoColumnSections; no support yet

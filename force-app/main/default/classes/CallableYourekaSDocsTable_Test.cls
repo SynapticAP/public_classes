@@ -1,8 +1,11 @@
 @istest
 public with sharing class CallableYourekaSDocsTable_Test {
 
+	static Contact con;
  @testSetup
 	static void setup() {
+		con = new Contact(LastName='Con');
+		insert con;
 		
 		disco__Form_Template__c template = new disco__Form_Template__c(disco__Status__c='In Use', Name = 'Clinical Note V1');
 		insert template;
@@ -15,10 +18,12 @@ public with sharing class CallableYourekaSDocsTable_Test {
 
 		disco__Question__c question1 = new disco__Question__c(disco__Label__c='Photos',disco__Type__c='Attachment/Photo',disco__Section__c=section.Id,disco__Form_Template__c=template.Id, disco__Order__c = 1);
 		disco__Question__c question2 = new disco__Question__c(disco__Label__c='Surgical History & Date', disco__Type__c='Date',disco__Section__c=section2.Id,disco__Form_Template__c=template.Id, disco__Order__c = 2);
+		disco__Question__c questionFL = new disco__Question__c(disco__Label__c='LName', disco__Type__c='Field Link',disco__Section__c=section2.Id,disco__Form_Template__c=template.Id, disco__Order__c = 3,
+							disco__Link_Answer_Field__c='Text_Answer__c',disco__Link_Lookup__c='disco__Form_Contact__c', disco__Link_Field__c='LastName',disco__Link_Object__c='Contact');
 
-		disco__Question__c question3 = new disco__Question__c(disco__Label__c='Reason for Surgery', disco__Type__c='Text',disco__Section__c=section3.Id,disco__Form_Template__c=template.Id, disco__Order__c = 3);
-		insert new List<disco__Question__c>{question1,question2,question3};
-		disco__Form__c form = new disco__Form__c(disco__Form_Template__c=template.Id);
+		disco__Question__c question3 = new disco__Question__c(disco__Label__c='Reason for Surgery', disco__Type__c='Text',disco__Section__c=section3.Id,disco__Form_Template__c=template.Id, disco__Order__c = 4);
+		insert new List<disco__Question__c>{question1,question2,question3,questionFL};
+		disco__Form__c form = new disco__Form__c(disco__Form_Template__c=template.Id,disco__Form_Contact__c=con.id);
 		insert form; 
 
 		disco__Answer__c answer1 = [Select Id from disco__Answer__c where disco__Question__c = :question1.Id];
@@ -45,7 +50,7 @@ public with sharing class CallableYourekaSDocsTable_Test {
 		Test.startTest();
 		List<disco__Answer__c> answerList = (List<disco__Answer__c>)new CallableYourekaSDocsTable().call('getLineItemsAsListSObject',new Map<String,Object>{'recordId'=>form.Id});
 		Test.stopTest();
-		system.assertEquals(3,answerList.size());
+		system.assertEquals(4,answerList.size());
 	}
 
 
@@ -88,7 +93,7 @@ public with sharing class CallableYourekaSDocsTable_Test {
 		Object sbAnswerList = new CallableYourekaSDocsTable().call('getAnswers',options);
 		try{
 			List<disco__Answer__c> answerList = (List<disco__Answer__c>)sbAnswerList;
-			System.assertEquals(3, answerList.size());
+			System.assertEquals(4, answerList.size());
 		}
 		catch(Exception e)
 		{
@@ -120,7 +125,7 @@ public with sharing class CallableYourekaSDocsTable_Test {
 			String answerTable = answerMap.get(options.get('hTMLName'));
 			String exptectedTableStart = '<table class="'+options.get('tableCSSName')+'">';
 			System.assertEquals(exptectedTableStart,answerTable.left(exptectedTableStart.length()),'html should start with \'<table>\'');
-			System.assertEquals(6, answerTable.countMatches('<td>'),'3 labels, 3 answers');
+			System.assertEquals(8, answerTable.countMatches('<td>'),'4 labels, 4 answers');
 		}
 		catch(Exception e)
 		{
@@ -142,5 +147,53 @@ public with sharing class CallableYourekaSDocsTable_Test {
 		Test.stopTest();
 	}
 
+	public static void getAnswersAsTableViaContact(){
+		disco__Form__c form = [Select Id From disco__Form__c limit 1];
+		disco__Section__c section = [Select Id, Name From disco__Section__c limit 1];
+	
+		Map<String,String> options = new Map<String,String>();
+		options.put('includeContentImages','true');
+		options.put('includePhotosInline','true');
+		options.put('contentImagesOnly','false');
+		options.put('photosOnly','false');
+		options.put('radioButtonsAsColumn','true');
+		options.put('sectionName','');
+		options.put('queryWhereClause','');
+		options.put('formId',null);
+		options.put('formLookupName','disco__Form_Contact__c');
+		options.put('recordId',con.Id);
+		options.put('templateName','Clinical Note V1');
+		options.put('returnAsTable','true');
+		options.put('tableCSSName','myClass');
+		options.put('createTableTag','true');
+		options.put('hTMLName','html');
+		Test.startTest();
+		Object sbAnswerTable = new CallableYourekaSDocsTable().call('getAnswers',options);
+		try{
+			Map<String,String> answerMap = (Map<String,String>)sbAnswerTable;
+			String answerTable = answerMap.get(options.get('hTMLName'));
+			String exptectedTableStart = '<table class="'+options.get('tableCSSName')+'">';
+			System.assertEquals(exptectedTableStart,answerTable.left(exptectedTableStart.length()),'html should start with \'<table>\'');
+			System.assertEquals(8, answerTable.countMatches('<td>'),'4 labels, 4 answers');
+		}
+		catch(Exception e)
+		{
+			System.assert(false,'with returnAsTable true, getAnswers should return a Map<String,String>');
+		}
+		options.put('photosOnly','true');
+		sbAnswerTable = new CallableApexYourekaForm().call('getAnswers',options);
+		try{
+			Map<String,String> answerMap = (Map<String,String>)sbAnswerTable;
+			String answerTable = answerMap.get(options.get('hTMLName'));
+			String exptectedTableStart = '<table class="'+options.get('tableCSSName')+'">';
+			System.assertEquals(exptectedTableStart,answerTable.left(exptectedTableStart.length()),'html should start with \'<table>\'');
+			System.assertEquals(2, answerTable.countMatches('<td>'),'1 labels, 1 photo answers');
+		}
+		catch(Exception e)
+		{
+			System.assert(false,'with returnAsTable true, getAnswers should return a Map<String,String>');
+		}		
+		Test.stopTest();
+	}
 
 }

@@ -18,6 +18,9 @@ global class CallableYourekaSDocsTable implements Callable {
         options.sectionName = (String)args.get('sectionName');
         options.queryWhereClause = (String)args.get('queryWhereClause');
         options.formId = (String)args.get('formId');
+				options.formLookupName = (String)args.get('formLookupName');
+				options.recordId = (String)args.get('recordId');
+				options.templateName = (String)args.get('templateName');
         options.hTMLName = (String)args.get('hTMLName');
         if (options.hTMLName==null || options.hTMLName=='')
           options.hTMLName = 'TABLE_HTML';
@@ -47,12 +50,23 @@ global class CallableYourekaSDocsTable implements Callable {
 
 
   public List<disco__Answer__c> queryAnswers(SDocsTable.TableOptions options){
+		if (String.isBlank(options.formId))
+		{
+			String formQuery = 'Select Id From disco__Form__c where '+options.formLookupName +' = '+options.recordId+' and disco__Form_Template__r.Name = '+options.templateName
+						+ ' limit 1 Order By Name DESC';			
+			List<disco__Form__c> forms = Database.query(formQuery);
+			if (forms.size()==0){
+				throw new ENoFormFoundException('No form found for '+options.formLookupName+' for record id '+options.recordId+' and template '+options.templateName);
+				//------------>
+			}
+			options.formId = forms[0].Id;
+
+		}
     String query = 'SELECT disco__Answer__c, disco__Long_Text_Answer__c,disco__Date_Answer__c,disco__Date_Time_Answer__c, disco__E_Sig_Image_Link__c, disco__E_Sig_Image_Id__c,disco__Linked_Section_Order__c, '
               +'disco__Question__r.disco__DMY_Format__c,disco__Question__r.disco__Label__c, disco__Question__r.disco__Image_Version_ID__c, disco__Question__r.disco__Section__r.Name, disco__Linked_Section_Record_ID__c, '
               +'disco__Form__r.disco__Form_Template_Name__c, disco__Form__r.id, disco__Question__r.disco__Order__c, disco__Hidden_By_Dep__c, disco__Question__r.disco__Type__c,  '
 			  +'disco__Question__r.disco__Section__r.disco__Type__c '
             +'FROM disco__Answer__c ';
-		system.debug('here');
     if (options.queryWhereClause != null && options.queryWhereClause != '')
       query += options.queryWhereClause;
     else 
