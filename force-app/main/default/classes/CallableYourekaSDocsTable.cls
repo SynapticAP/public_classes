@@ -49,6 +49,7 @@ global class CallableYourekaSDocsTable implements Callable {
   }
 
 
+  class ENoFormFoundException extends Exception{}
   public List<disco__Answer__c> queryAnswers(SDocsTable.TableOptions options){
 		if (String.isBlank(options.formId))
 		{
