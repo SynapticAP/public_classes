@@ -22,6 +22,14 @@ global with sharing class SDocsTable {
 		global Boolean linkedSectionAsTable; // show a linked table with the question labels as row headers and the answers for each as a rwo
 	}
 
+	public class SectionInfo{
+		public Boolean onlyRBQuestions;
+		public Integer maxQVs;
+		public SectionInfo(){
+			onlyRBQuestions = true;
+			maxQVs = 0;
+		}
+	}
 
 
 	public static String	handleSpecialCharacter(disco__Answer__c ans){
@@ -39,7 +47,7 @@ global with sharing class SDocsTable {
 			ans.disco__Answer__c = ans.disco__Answer__c.replaceAll('<', '&lt;');
 			ans.disco__Answer__c = ans.disco__Answer__c.replaceAll('>', '&gt;');
 		} 
-		else if (ans.disco__Question__r.disco__Type__c == 'Date' && ans.disco__Date_Answer__c != null)
+		if (ans.disco__Date_Answer__c != null)
 		{
 			DateTime dt = DateTime.newInstance(ans.disco__Date_Answer__c,Time.newInstance(0,0,0,0));
 			if (ans.disco__Question__r.disco__DMY_Format__c==true)
@@ -47,7 +55,7 @@ global with sharing class SDocsTable {
 			else 
 				ans.disco__Answer__c = dt.format('MM/dd/yyyy');			
 		}
-		else if (ans.disco__Question__r.disco__Type__c == 'Date/Time' && ans.disco__Date_Time_Answer__c != null)	
+		else if (ans.disco__Date_Time_Answer__c != null)	
 		{
 			DateTime dt = ans.disco__Date_Time_Answer__c;
 			if (ans.disco__Question__r.disco__DMY_Format__c==true)
@@ -102,14 +110,6 @@ global with sharing class SDocsTable {
 
 		public void addCell(DataTableCell cell){
 			cells.add(cell);
-		}
-
-		public List<Boolean> getColumnDataStatus(){
-			List<Boolean> colStatus = new List<Boolean>();
-			for(DataTableCell cell: this.cells ){
-				colStatus.add(cell.isValuePopulated());
-			}
-			return colStatus;
 		}
 
 		public Boolean hasAnyData(){
@@ -189,7 +189,7 @@ global with sharing class SDocsTable {
 
 		Decimal  thisLS = lsAnswers[0].disco__Linked_Section_Order__c;		
 		Integer i =0;
-		while (i<=lsAnswers.size() && lsAnswers[i].disco__Linked_Section_Order__c==thisLS) {
+		while (i<lsAnswers.size() && lsAnswers[i].disco__Linked_Section_Order__c==thisLS) {
 			headers.add(lsAnswers[i++].disco__Question__r.disco__Label__c);
 		}
 			
@@ -218,7 +218,7 @@ global with sharing class SDocsTable {
 	}
 
 	// html table for answers in a single section. Header will be section name
-	public static String yourekaAnswerTable(List<disco__Answer__c>answers, TableOptions options,Integer qvCols,Map<Id,List<disco__Question_Value__c>> qId2QVs ){
+	public static String yourekaAnswerTable(List<disco__Answer__c>answers, TableOptions options,Map<Id,SectionInfo>sec2info,Map<Id,List<disco__Question_Value__c>> qId2QVs ){
 		if (answers == null || answers.size()==0)
 			return '';
 		DataTable table=null; 
@@ -227,8 +227,10 @@ global with sharing class SDocsTable {
 		String html='';
 		List<disco__Answer__c> lsAnswers = new List<disco__Answer__c>();
 		Integer cols = 2;
-		if (options.radioButtonsAsColumn==true)
-			cols = 2 + qvCols;
+		SectionInfo si;
+		si = sec2info.get(answers[0].disco__Question__r.disco__Section__c);
+		if (options.radioButtonsAsColumn==true && answers.size()>0)
+			cols = si.maxQVs + (si.onlyRBQuestions==true? 1:2); // one for the label, maybe one for the answer
 
 		for (disco__Answer__c ans : answers){
 			if (options.skipSpaces==true &&ans.disco__Question__r.disco__Type__c=='Space' )
@@ -247,6 +249,11 @@ global with sharing class SDocsTable {
 				else if (table != null) // handle regular section table
 					html += table.toHtmlTable(header,options.createTableTag)+'<br/>';
 				sectionName = ans.disco__Question__r.disco__Section__r.Name;
+				si = sec2info.get(ans.disco__Question__r.disco__Section__c);
+				system.debug('secinfo for section '+sectionName+'='+json.serialize(si));
+				if (options.radioButtonsAsColumn==true && answers.size()>0)
+					cols = si.maxQVs + (si.onlyRBQuestions==true? 1:2); // one for the label, maybe one for the answer
+				
 				header = '<th colspan="'+cols+'" style="background-color:#cccccc;text-align:center" >'+sectionName+'</th>';
 				table = new DataTable (options.tableCSSName,header);
 			}
@@ -264,7 +271,8 @@ global with sharing class SDocsTable {
 				{
 					if (qvs != null && qvs.size()>0)
 					{
-						row.addCell(new DatatableCell('')); // leave normal answer col empty
+						if (si.onlyRBQuestions!=true)
+							row.addCell(new DatatableCell('')); // leave normal answer col empty but have it for other answers
 						for (disco__Question_Value__c qv : qvs)
 						{
 							if (qv.disco__Label__c == ans.disco__Answer__c)
@@ -273,7 +281,7 @@ global with sharing class SDocsTable {
 								row.addCell(new DatatableCell(''));
 						}
 					}
-					for (Integer i=qvs.size();i<qvcols;i++)
+					for (Integer i=qvs.size();i<si.maxQVs;i++)
 						row.addCell(new DatatableCell(''));
 				}
 				else 
