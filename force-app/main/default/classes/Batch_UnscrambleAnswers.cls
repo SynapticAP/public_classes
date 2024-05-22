@@ -69,9 +69,9 @@ public with sharing class Batch_UnscrambleAnswers implements Database.Batchable<
 					failureResults+= ans.name+' ('+ans.Id+') before and after didn\'t match ('+beforeAndAfter[0].disco__Form__c+' vs '+beforeAndAfter[1].disco__Form__c+')\n';
 				else 
 				{
-					String beforeAndAfternum = ans.disco__Form__c;
+					String oldFormId = ans.disco__Form__c;
 					ans.disco__Form__c = beforeAndAfter[0].disco__Form__c;
-					successResults+= ans.name+' ('+ans.Id+') fixed via before and after. Moved to '+ans.disco__Form__c+' from form '+beforeAndAfternum+\n';
+					successResults+= ans.name+' ('+ans.Id+') fixed via before and after. Moved to '+ans.disco__Form__c+' from form '+oldFormId+'\n';
 					fixedAnswers.add(ans);
 				}
 			}
