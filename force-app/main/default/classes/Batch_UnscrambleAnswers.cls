@@ -15,7 +15,7 @@ public with sharing class Batch_UnscrambleAnswers implements Database.Batchable<
 
 	public Database.QueryLocator start(Database.BatchableContext BC) 
 	{
-		String query='Select Id, Name, disco__Form_Mobile_ID__c From disco__Answer__c Where Template_Mismatch__c = true';
+		String query='Select Id, Name, disco__Form__c,disco__Form_Mobile_ID__c From disco__Answer__c Where Template_Mismatch__c = true';
 		return Database.getQueryLocator(query);
 	}
 
