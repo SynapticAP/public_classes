@@ -1,11 +1,8 @@
 public with sharing class Batch_FindFormsMissingAnswers implements Database.Batchable<sObject>,Database.stateful {
 
-    public List<String> formsWMessages; 
+	public List<String> tooManyAnswers = new List<String>();
+	public List<String> tooFewAnswers = new List<String>();
 
-	public Batch_FindFormsMissingAnswers ()
-	{
-		 formsWMessages = new List<String>();
-	}
 
     public Database.QueryLocator start(Database.BatchableContext BC) 
     {
@@ -31,6 +28,7 @@ public with sharing class Batch_FindFormsMissingAnswers implements Database.Batc
                         From disco__Question__c 
                         Where disco__Section__r.disco__Type__c not in ('Linked','Task') and disco__Form_Template__c in :templateIds
                         Group By disco__Form_Template__c];
+		// future work - check on linked section. Skip for now
         // List<AggregateResult> linkedSecQuestionsInTemplates = [Select disco__Form_Template__c,count(id) cnt 
         //              From disco__Question__c 
         //              Where disco__Section__r.disco__Type__c  in ('Linked','Task') and disco__Form_Template__c in :templateIds
@@ -46,13 +44,18 @@ public with sharing class Batch_FindFormsMissingAnswers implements Database.Batc
             Integer answerCount = [Select Count() From disco__Answer__c where disco__Form__c = :frm.id and disco__Linked_Section_Order__c=null];
 			Integer questionCount = templateId2StdSecQCnt.get(frm.disco__Form_Template__c);
             if (answerCount != questionCount && answerCount>0)
-                formsWMessages.add(frm.name+' Expected '+templateId2StdSecQCnt.get(frm.disco__Form_Template__c)+' questions, found '+answerCount);
+				if (answerCount>questionCount)
+					tooManyAnswers.add(frm.name+' Expected '+templateId2StdSecQCnt.get(frm.disco__Form_Template__c)+' questions, found '+answerCount);
+				else
+					tooFewAnswers.add(frm.name+' Expected '+templateId2StdSecQCnt.get(frm.disco__Form_Template__c)+' questions, found '+answerCount);
         }
     }   
 
-    // mandatory finish
+    // mandatory finish, log out findings
     public  void finish(Database.BatchableContext BC) {
-        system.debug('Findings:\n'+String.join(formsWMessages,'\n'));
+        system.debug('Findings:\n\n'
+			+'Too few:\n'+String.join(tooFewAnswers,'\n')
+			+'\n\nToo many:\n'+String.join(tooManyAnswers,'\n'));
     }
 
 
