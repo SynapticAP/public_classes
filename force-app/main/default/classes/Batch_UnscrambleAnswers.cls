@@ -103,7 +103,6 @@ public with sharing class Batch_UnscrambleAnswers implements Database.Batchable<
             for (Integer ansNameInRange=ansNumber-plusminus;ansNameInRange<ansnumber+plusminus;ansNameInRange++)
                 answerRange.add(formatAnsNum(ansNameInRange));
             List<disco__Answer__c> beforeAndAfterWideNet = [Select Id,name,disco__Form__c From disco__Answer__c Where Name in :answerRange order by name];
-            system.debug('queried '+beforeAndAfterWideNet.size()+' rangesize '+answerRange.size());
             List<disco__Answer__c>beforeAndAfter = findBeforeAndAfter(beforeAndAfterWideNet,ans);
             if (beforeAndAfter.size() != 2)
                 failureResults+= ans.name+' ('+ans.Id+') didn\'t find both before and after \n';
@@ -132,6 +131,14 @@ public with sharing class Batch_UnscrambleAnswers implements Database.Batchable<
         
         system.debug('Successes:\n'+successResults);
         system.debug('Failures:\n'+failureResults);
+		Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+		String[] toAddresses = new List<String>();
+		toAddresses.add(UserInfo.getUserEmail());
+		mail.setToAddresses(toAddresses);
+		mail.setSenderDisplayName('Youreka');
+		mail.setSubject('Answer Unscramble');
+		mail.setPlainTextBody('Successes:\n'+successResults+'\n\n\nFailures:\n'+failureResults);
+		Messaging.sendEmail(new Messaging.SingleEmailMessage[] { mail } );
     }
 
 
